@@ -195,9 +195,11 @@ void print_report() {
     printf("- Audit open ports\n");
 }
 
-// ---------------- MAIN ---------------- //
+// ---------------- ENTRYPOINT (called from Main.c) ---------------- //
 
-int main() {
+void runPart1Audit(void) {
+    total_risk = 0;
+
     printf("Starting Security Audit...\n");
 
     check_ssh();
@@ -209,6 +211,4 @@ int main() {
     check_integrity();
 
     print_report();
-
-    return 0;
 }

@@ -108,6 +108,21 @@ Build modules
 Use complex parsing
 Add networking or APIs
 Over-engineer
-9.  How to Run
-gcc audit.c -o audit
-sudo ./audit
+9. How to Run (current repo)
+
+Compile:
+
+```bash
+gcc Part_1.c Main.c DetectionMonitor.c -o security_auditor
+```
+
+Run:
+
+```bash
+sudo ./security_auditor
+```
+
+Menu options:
+- 1: Run Part 1 audit
+- 2: Run Part 2 intrusion detection monitor (continuous)
+- 3: Run Part 2 self-test (starts monitor, injects test events with `logger`, checks `log.txt` + iptables, then stops monitor)
