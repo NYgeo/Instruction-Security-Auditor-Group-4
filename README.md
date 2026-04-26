@@ -122,6 +122,9 @@ Run:
 sudo ./security_auditor
 ```
 
+Part 2 note:
+- `Option 2` runs `./detection_monitor.sh` (keep that script in the same directory as `security_auditor`)
+
 Menu options:
 - 1: Run Part 1 audit
 - 2: Run Part 2 intrusion detection monitor (continuous)
