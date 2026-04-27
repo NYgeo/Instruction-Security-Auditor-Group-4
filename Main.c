@@ -17,11 +17,14 @@ static void runLiveLogsForTwoMinutes(void) {
     printf("\n[Live Logs]\n");
     printf("This will:\n");
     printf("- Start the detection monitor\n");
-    printf("- Stream live logs for 2 minutes\n");
+    printf("- Stream live logs for 1 minute\n");
     printf("- Stop the monitor automatically\n\n");
 
     pid_t pid = fork();
     if (pid == 0) {
+        // Put the monitor in its own process group so we can signal the whole group
+        // (bash + tail pipelines) from the parent.
+        (void)setpgid(0, 0);
         runDetectionMonitor();
         _exit(0);
     }
@@ -30,11 +33,15 @@ static void runLiveLogsForTwoMinutes(void) {
         return;
     }
 
-    sleep(120);
+    // Ensure the child has its own process group (best-effort).
+    (void)setpgid(pid, pid);
 
-    (void)kill(pid, SIGINT);
+    sleep(60);
+
+    // Signal the whole process group so the underlying bash/tail children exit too.
+    (void)kill(-pid, SIGINT);
     (void)waitpid(pid, NULL, 0);
-    printf("\nLive logs complete.\n");
+    printf("\nDetection monitor completed.\n");
 }
 
 static void runPart2SelfTest(void) {
@@ -92,14 +99,15 @@ static void runPart2SelfTest(void) {
     // Stop monitor
     (void)kill(pid, SIGINT);
     (void)waitpid(pid, NULL, 0);
-    printf("\nSelf-test complete.\n");
+    printf("\nDetection monitor completed.\n");
+    printf("Self-test complete.\n");
 }
 
 int main() {
     int choice;
 
     printf("1. Part 1\n");
-    printf("2. Part 2 Live Logs (2 minutes)\n");
+    printf("2. Part 2 Live Logs (1 minute)\n");
     printf("3. Part 2 Self-Test (skip live logs)\n");
     printf("Enter choice: ");
     scanf("%d", &choice);
