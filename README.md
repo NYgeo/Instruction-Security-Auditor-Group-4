@@ -1,6 +1,3 @@
-Here is a simplified, well-structured version of your project documentation. It removes the conversational "notes" and organizes the technical details into a professional format that is easy to read at a glance.
-
----
 
 # 🛡️ Linux Security Auditor (Group 4)
 
