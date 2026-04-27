@@ -99,19 +99,16 @@ int main() {
     int choice;
 
     printf("1. Part 1\n");
-    printf("2. Detection Monitor (continuous)\n");
-    printf("3. Live Logs (2 minutes)\n");
-    printf("4. Part 2 Self-Test\n");
+    printf("2. Part 2 Live Logs (2 minutes)\n");
+    printf("3. Part 2 Self-Test (skip live logs)\n");
     printf("Enter choice: ");
     scanf("%d", &choice);
 
     if (choice == 1) {
         runPart1Audit();
     } else if (choice == 2) {
-        runDetectionMonitor();
-    } else if (choice == 3) {
         runLiveLogsForTwoMinutes();
-    } else if (choice == 4) {
+    } else if (choice == 3) {
         runPart2SelfTest();
     } else {
         printf("Invalid choice.\n");
