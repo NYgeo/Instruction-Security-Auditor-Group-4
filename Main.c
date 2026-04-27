@@ -8,6 +8,35 @@
 void runDetectionMonitor(void);
 void runPart1Audit(void);
 
+static void runLiveLogsForTwoMinutes(void) {
+    if (geteuid() != 0) {
+        printf("Live logs must be run with sudo.\n");
+        return;
+    }
+
+    printf("\n[Live Logs]\n");
+    printf("This will:\n");
+    printf("- Start the detection monitor\n");
+    printf("- Stream live logs for 2 minutes\n");
+    printf("- Stop the monitor automatically\n\n");
+
+    pid_t pid = fork();
+    if (pid == 0) {
+        runDetectionMonitor();
+        _exit(0);
+    }
+    if (pid < 0) {
+        perror("fork");
+        return;
+    }
+
+    sleep(120);
+
+    (void)kill(pid, SIGINT);
+    (void)waitpid(pid, NULL, 0);
+    printf("\nLive logs complete.\n");
+}
+
 static void runPart2SelfTest(void) {
     if (geteuid() != 0) {
         printf("Part 2 self-test must be run with sudo.\n");
@@ -70,8 +99,9 @@ int main() {
     int choice;
 
     printf("1. Part 1\n");
-    printf("2. Detection Monitor\n");
-    printf("3. Part 2 Self-Test\n");
+    printf("2. Detection Monitor (continuous)\n");
+    printf("3. Live Logs (2 minutes)\n");
+    printf("4. Part 2 Self-Test\n");
     printf("Enter choice: ");
     scanf("%d", &choice);
 
@@ -80,6 +110,8 @@ int main() {
     } else if (choice == 2) {
         runDetectionMonitor();
     } else if (choice == 3) {
+        runLiveLogsForTwoMinutes();
+    } else if (choice == 4) {
         runPart2SelfTest();
     } else {
         printf("Invalid choice.\n");
