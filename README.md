@@ -1,61 +1,72 @@
+Here is a simplified, well-structured version of your project documentation. It removes the conversational "notes" and organizes the technical details into a professional format that is easy to read at a glance.
+
+---
 
 # 🛡️ Linux Security Auditor (Group 4)
 
-A lightweight C-based security suite that combines a **System Audit** with a **Real-Time Intrusion Monitor**.
+A streamlined security suite for Linux that combines a system configuration audit with a real-time intrusion detection monitor.
 
 ## 🚀 Quick Start
+
 ```bash
-# 1. Compile
+# 1. Compile the suite
 gcc Part_1.c Main.c DetectionMonitor.c -o security_auditor
 
-# 2. Run
+# 2. Run with root privileges
 sudo ./security_auditor
 ```
 
 ---
 
-## 🛠️ Main Features
+## 🛠️ System Components
 
 ### 1. Security Audit (Part 1)
-Scans for common misconfigurations and provides a **Risk Score**:
-* **SSH Check:** Verifies if root login is disabled.
-* **Port Scan:** Lists all active listening ports.
-* **Permission Audit:** Finds world-writable and SUID files.
-* **Account Security:** Checks for empty passwords in `/etc/shadow`.
-* **Firewall Status:** Confirms if `ufw` is active.
+Evaluates the system's security posture by running six essential checks:
+
+| Check | Command/Method | Risk Points |
+| :--- | :--- | :--- |
+| **SSH Config** | Detects if Root Login is enabled | +2 |
+| **Open Ports** | Scans active listeners via `ss -tuln` | +2 |
+| **Permissions** | Finds world-writable files (`-perm -0002`) | +2 |
+| **Passwords** | Scans `/etc/shadow` for empty passwords | +3 |
+| **SUID Files** | Identifies elevated execution files (`-perm -4000`) | +2 |
+| **Firewall** | Verifies if `UFW` is active | +3 |
+
+**Risk Levels:** 🟢 **0–4 (Low)** | 🟡 **5–9 (Medium)** | 🔴 **10+ (High)**
 
 ### 2. Intrusion Detection (Part 2)
-A background monitor that watches system logs for:
-* **Failed Logins:** Multiple unsuccessful password attempts.
-* **Sudo Abuse:** Unauthorized attempts to use root privileges.
-* **Auto-Logging:** Saves all suspicious events to `log.txt`.
+A continuous background monitor that tracks:
+* **Brute-Force Detection:** Monitors for repeated failed login attempts.
+* **Unauthorized Access:** Flags suspicious `sudo` activity.
+* **Incident Logging:** Records all alerts to `log.txt` for review.
 
 ---
 
-## 🕹️ Menu Options
-When you run the program, choose from the following:
+## 🕹️ User Menu
 
-| Option | Action | Description |
-| :--- | :--- | :--- |
-| **1** | **Run Audit** | Performs the 6-point scan and shows the risk level. |
-| **2** | **Start Monitor** | Starts the live log watcher (press Ctrl+C to stop). |
-| **3** | **Self-Test** | **Automated:** Injects test logs and verifies if the tool sees them. |
+Once launched, the program provides the following interactive options:
 
----
-
-## 🧪 How the Self-Test Works
-The self-test (Option 3) is designed to prove the tool works without needing a real hacker:
-1.  **Starts** the monitor in the background.
-2.  **Simulates** an attack using the `logger` command.
-3.  **Verifies** that the attack was caught and written to `log.txt`.
-4.  **Cleans up** all test data and processes.
+1.  **Run Audit:** Performs the 6-point scan, calculates the risk score, and provides fixes.
+2.  **Start Monitor:** Activates the real-time log watcher (press `Ctrl+C` to stop).
+3.  **Self-Test:** Automated verification that injects test events using `logger` and confirms detection.
 
 ---
 
-## 📋 Requirements
-* **OS:** Linux (Ubuntu/Debian preferred).
-* **Compiler:** `gcc`.
-* **Privileges:** Must run with `sudo` to access system security files
+## 🧪 Self-Test Workflow
+The automated self-test (Option 3) validates the system by:
+1.  Launching the **Detection Monitor** in the background.
+2.  Injecting simulated attack signatures into the system logs via `logger`.
+3.  Verifying the monitor correctly writes these events to `log.txt`.
+4.  Cleaning up test processes and logs automatically.
+
+---
+
+## ⚙️ Implementation Standards
+* **Lightweight:** Uses `system()` and `popen()` for efficient command execution.
+* **Single File Logic:** Built to be easily readable without complex dependencies.
+* **Actionable:** Every warning is paired with a specific fix in the final report.
+
+-----------------------------------
 
 A command-line C program that scans a Linux system for common security misconfigurations, evaluates risk, and generates a structured security report with actionable recommendations.
 
