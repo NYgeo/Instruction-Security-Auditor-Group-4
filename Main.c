@@ -8,6 +8,42 @@
 void runDetectionMonitor(void);
 void runPart1Audit(void);
 
+static void runLiveLogsForTwoMinutes(void) {
+    if (geteuid() != 0) {
+        printf("Live logs must be run with sudo.\n");
+        return;
+    }
+
+    printf("\n[Live Logs]\n");
+    printf("This will:\n");
+    printf("- Start the detection monitor\n");
+    printf("- Stream live logs for 1 minute\n");
+    printf("- Stop the monitor automatically\n\n");
+
+    pid_t pid = fork();
+    if (pid == 0) {
+        // Put the monitor in its own process group so we can signal the whole group
+        // (bash + tail pipelines) from the parent.
+        (void)setpgid(0, 0);
+        runDetectionMonitor();
+        _exit(0);
+    }
+    if (pid < 0) {
+        perror("fork");
+        return;
+    }
+
+    // Ensure the child has its own process group (best-effort).
+    (void)setpgid(pid, pid);
+
+    sleep(60);
+
+    // Signal the whole process group so the underlying bash/tail children exit too.
+    (void)kill(-pid, SIGINT);
+    (void)waitpid(pid, NULL, 0);
+    printf("\nDetection monitor completed.\n");
+}
+
 static void runPart2SelfTest(void) {
     if (geteuid() != 0) {
         printf("Part 2 self-test must be run with sudo.\n");
@@ -25,6 +61,8 @@ static void runPart2SelfTest(void) {
 
     pid_t pid = fork();
     if (pid == 0) {
+        // Put the monitor in its own process group so we can stop bash/tail children too.
+        (void)setpgid(0, 0);
         runDetectionMonitor();
         _exit(0);
     }
@@ -32,6 +70,9 @@ static void runPart2SelfTest(void) {
         perror("fork");
         return;
     }
+
+    // Ensure the child has its own process group (best-effort).
+    (void)setpgid(pid, pid);
 
     sleep(2); // give tails time to start
 
@@ -61,29 +102,42 @@ static void runPart2SelfTest(void) {
     (void)system(cmd);
 
     // Stop monitor
-    (void)kill(pid, SIGINT);
+    (void)kill(-pid, SIGINT);
     (void)waitpid(pid, NULL, 0);
-    printf("\nSelf-test complete.\n");
+    printf("\nDetection monitor completed.\n");
+    printf("Self-test complete.\n");
 }
 
 int main() {
-    int choice;
+    while (1) {
+        int choice = -1;
 
-    printf("1. Part 1\n");
-    printf("2. Detection Monitor\n");
-    printf("3. Part 2 Self-Test\n");
-    printf("Enter choice: ");
-    scanf("%d", &choice);
+        printf("\n");
+        printf("1. Part 1\n");
+        printf("2. Part 2 Live Logs (1 minute)\n");
+        printf("3. Part 2 Self-Test (skip live logs)\n");
+        printf("0. Exit\n");
+        printf("Enter choice: ");
 
-    if (choice == 1) {
-        runPart1Audit();
-    } else if (choice == 2) {
-        runDetectionMonitor();
-    } else if (choice == 3) {
-        runPart2SelfTest();
-    } else {
-        printf("Invalid choice.\n");
+        if (scanf("%d", &choice) != 1) {
+            // Clear invalid input
+            int ch;
+            while ((ch = getchar()) != '\n' && ch != EOF) {}
+            printf("Invalid input. Please enter a number.\n");
+            continue;
+        }
+
+        if (choice == 0) {
+            printf("Goodbye.\n");
+            return 0;
+        } else if (choice == 1) {
+            runPart1Audit();
+        } else if (choice == 2) {
+            runLiveLogsForTwoMinutes();
+        } else if (choice == 3) {
+            runPart2SelfTest();
+        } else {
+            printf("Invalid choice.\n");
+        }
     }
-
-    return 0;
 }

@@ -67,9 +67,29 @@ int check_ssh() {
 int check_ports() {
     printf("\n[Open Ports Check]\n");
 
-    run_and_print("Listening Ports", "ss -tuln");
+    // Some minimal environments may not have ss; fall back to netstat.
+    run_and_print(
+        "Listening Ports",
+        "bash -lc '"
+        "if command -v ss >/dev/null 2>&1; then "
+        "  ss -tuln; "
+        "elif command -v netstat >/dev/null 2>&1; then "
+        "  netstat -tuln; "
+        "else "
+        "  echo \"ERROR: neither ss nor netstat is available\"; "
+        "fi'"
+    );
 
-    int ports = count_results("ss -tuln | grep LISTEN");
+    int ports = count_results(
+        "bash -lc '"
+        "if command -v ss >/dev/null 2>&1; then "
+        "  ss -tuln | grep -c LISTEN || true; "
+        "elif command -v netstat >/dev/null 2>&1; then "
+        "  netstat -tuln | grep -c LISTEN || true; "
+        "else "
+        "  echo 0; "
+        "fi'"
+    );
 
     if (ports > 10) {  // arbitrary threshold
         printf("⚠ Many open ports\n");
@@ -84,10 +104,22 @@ int check_world_writable() {
 
     run_and_print(
         "Writable Files",
-        "find / -type f -perm -0002 2>/dev/null | head -n 20"
+        // Full-disk find can be extremely slow. Limit to same filesystem and
+        // skip pseudo-filesystems; also bound runtime.
+        "bash -lc '"
+        "timeout 15s find / -xdev "
+        "  \\( -path /proc -o -path /sys -o -path /dev -o -path /run \\) -prune -o "
+        "  -type f -perm -0002 -print 2>/dev/null | head -n 20 "
+        "|| echo \"(world-writable scan timed out)\"'"
     );
 
-    int count = count_results("find / -type f -perm -0002 2>/dev/null");
+    int count = count_results(
+        "bash -lc '"
+        "timeout 15s find / -xdev "
+        "  \\( -path /proc -o -path /sys -o -path /dev -o -path /run \\) -prune -o "
+        "  -type f -perm -0002 -print 2>/dev/null "
+        "|| true'"
+    );
 
     if (count > 0) {
         printf("⚠ World-writable files found: %d\n", count);
@@ -122,10 +154,20 @@ int check_suid() {
 
     run_and_print(
         "SUID Files",
-        "find / -perm -4000 2>/dev/null | head -n 20"
+        "bash -lc '"
+        "timeout 15s find / -xdev "
+        "  \\( -path /proc -o -path /sys -o -path /dev -o -path /run \\) -prune -o "
+        "  -perm -4000 -print 2>/dev/null | head -n 20 "
+        "|| echo \"(SUID scan timed out)\"'"
     );
 
-    int count = count_results("find / -perm -4000 2>/dev/null");
+    int count = count_results(
+        "bash -lc '"
+        "timeout 15s find / -xdev "
+        "  \\( -path /proc -o -path /sys -o -path /dev -o -path /run \\) -prune -o "
+        "  -perm -4000 -print 2>/dev/null "
+        "|| true'"
+    );
 
     if (count > 50) {  // typical systems have some
         printf("⚠ Large number of SUID binaries\n");
