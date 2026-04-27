@@ -152,11 +152,31 @@ monitor_sys_log() {
   done
 }
 
+AUTH_PID=""
+SYS_PID=""
+CLEANED_UP=0
+
 cleanup() {
+  # Make cleanup idempotent: traps/signals can fire more than once.
+  if [[ "$CLEANED_UP" -eq 1 ]]; then
+    return 0
+  fi
+  CLEANED_UP=1
+
+  # Prevent re-entrancy while we're shutting down.
+  trap - INT TERM EXIT
+
   log_event "IDS STOP"
-  # kill background tail pipelines started from this script
-  kill 0 2>/dev/null || true
-  exit 0
+
+  # Stop only children we started (avoid kill 0, which can re-signal ourselves).
+  if [[ -n "${AUTH_PID}" ]]; then
+    kill "${AUTH_PID}" 2>/dev/null || true
+  fi
+  if [[ -n "${SYS_PID}" ]]; then
+    kill "${SYS_PID}" 2>/dev/null || true
+  fi
+
+  wait 2>/dev/null || true
 }
 
 ## ---------------- MAIN ----------------
@@ -181,9 +201,9 @@ if [[ -z "${SYS_LOG}" ]]; then
   exit 1
 fi
 
-trap cleanup INT TERM
+trap cleanup INT TERM EXIT
 
-monitor_auth_log &
-monitor_sys_log &
+monitor_auth_log & AUTH_PID="$!"
+monitor_sys_log & SYS_PID="$!"
 wait
 
