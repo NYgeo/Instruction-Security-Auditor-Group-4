@@ -61,6 +61,8 @@ static void runPart2SelfTest(void) {
 
     pid_t pid = fork();
     if (pid == 0) {
+        // Put the monitor in its own process group so we can stop bash/tail children too.
+        (void)setpgid(0, 0);
         runDetectionMonitor();
         _exit(0);
     }
@@ -68,6 +70,9 @@ static void runPart2SelfTest(void) {
         perror("fork");
         return;
     }
+
+    // Ensure the child has its own process group (best-effort).
+    (void)setpgid(pid, pid);
 
     sleep(2); // give tails time to start
 
@@ -97,7 +102,7 @@ static void runPart2SelfTest(void) {
     (void)system(cmd);
 
     // Stop monitor
-    (void)kill(pid, SIGINT);
+    (void)kill(-pid, SIGINT);
     (void)waitpid(pid, NULL, 0);
     printf("\nDetection monitor completed.\n");
     printf("Self-test complete.\n");
