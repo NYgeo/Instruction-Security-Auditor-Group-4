@@ -104,23 +104,35 @@ static void runPart2SelfTest(void) {
 }
 
 int main() {
-    int choice;
+    while (1) {
+        int choice = -1;
 
-    printf("1. Part 1\n");
-    printf("2. Part 2 Live Logs (1 minute)\n");
-    printf("3. Part 2 Self-Test (skip live logs)\n");
-    printf("Enter choice: ");
-    scanf("%d", &choice);
+        printf("\n");
+        printf("1. Part 1\n");
+        printf("2. Part 2 Live Logs (1 minute)\n");
+        printf("3. Part 2 Self-Test (skip live logs)\n");
+        printf("0. Exit\n");
+        printf("Enter choice: ");
 
-    if (choice == 1) {
-        runPart1Audit();
-    } else if (choice == 2) {
-        runLiveLogsForTwoMinutes();
-    } else if (choice == 3) {
-        runPart2SelfTest();
-    } else {
-        printf("Invalid choice.\n");
+        if (scanf("%d", &choice) != 1) {
+            // Clear invalid input
+            int ch;
+            while ((ch = getchar()) != '\n' && ch != EOF) {}
+            printf("Invalid input. Please enter a number.\n");
+            continue;
+        }
+
+        if (choice == 0) {
+            printf("Goodbye.\n");
+            return 0;
+        } else if (choice == 1) {
+            runPart1Audit();
+        } else if (choice == 2) {
+            runLiveLogsForTwoMinutes();
+        } else if (choice == 3) {
+            runPart2SelfTest();
+        } else {
+            printf("Invalid choice.\n");
+        }
     }
-
-    return 0;
 }
