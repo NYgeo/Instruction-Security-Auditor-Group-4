@@ -1,7 +1,61 @@
-# Instruction-Security-Auditor-Group-4
-# Part 1 Outline 
-Linux Security Audit Tool — Project Outline
-1. Project Overview
+
+# 🛡️ Linux Security Auditor (Group 4)
+
+A lightweight C-based security suite that combines a **System Audit** with a **Real-Time Intrusion Monitor**.
+
+## 🚀 Quick Start
+```bash
+# 1. Compile
+gcc Part_1.c Main.c DetectionMonitor.c -o security_auditor
+
+# 2. Run
+sudo ./security_auditor
+```
+
+---
+
+## 🛠️ Main Features
+
+### 1. Security Audit (Part 1)
+Scans for common misconfigurations and provides a **Risk Score**:
+* **SSH Check:** Verifies if root login is disabled.
+* **Port Scan:** Lists all active listening ports.
+* **Permission Audit:** Finds world-writable and SUID files.
+* **Account Security:** Checks for empty passwords in `/etc/shadow`.
+* **Firewall Status:** Confirms if `ufw` is active.
+
+### 2. Intrusion Detection (Part 2)
+A background monitor that watches system logs for:
+* **Failed Logins:** Multiple unsuccessful password attempts.
+* **Sudo Abuse:** Unauthorized attempts to use root privileges.
+* **Auto-Logging:** Saves all suspicious events to `log.txt`.
+
+---
+
+## 🕹️ Menu Options
+When you run the program, choose from the following:
+
+| Option | Action | Description |
+| :--- | :--- | :--- |
+| **1** | **Run Audit** | Performs the 6-point scan and shows the risk level. |
+| **2** | **Start Monitor** | Starts the live log watcher (press Ctrl+C to stop). |
+| **3** | **Self-Test** | **Automated:** Injects test logs and verifies if the tool sees them. |
+
+---
+
+## 🧪 How the Self-Test Works
+The self-test (Option 3) is designed to prove the tool works without needing a real hacker:
+1.  **Starts** the monitor in the background.
+2.  **Simulates** an attack using the `logger` command.
+3.  **Verifies** that the attack was caught and written to `log.txt`.
+4.  **Cleans up** all test data and processes.
+
+---
+
+## 📋 Requirements
+* **OS:** Linux (Ubuntu/Debian preferred).
+* **Compiler:** `gcc`.
+* **Privileges:** Must run with `sudo` to access system security files
 
 A command-line C program that scans a Linux system for common security misconfigurations, evaluates risk, and generates a structured security report with actionable recommendations.
 
