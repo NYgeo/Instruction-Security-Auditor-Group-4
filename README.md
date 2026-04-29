@@ -101,5 +101,3 @@ Option 3 currently does the following:
 ## 📦 Current Repo Run Notes
 
 - Keep `detection_monitor.sh` in the same directory as the compiled `security_auditor` binary.
-
-```
