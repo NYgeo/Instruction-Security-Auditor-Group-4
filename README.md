@@ -1,131 +1,125 @@
-# Instruction-Security-Auditor-Group-4
-# Part 1 Outline 
-Linux Security Audit Tool — Project Outline
-1. Project Overview
+# Linux Security Auditor & Intrusion Detection System
+## Group-4 Cybersecurity Project
 
-A command-line C program that scans a Linux system for common security misconfigurations, evaluates risk, and generates a structured security report with actionable recommendations.
+A comprehensive Linux security tool that performs system audits for misconfigurations and provides real-time intrusion detection monitoring.
 
-Simple Linux Security Audit Tool (Single File)
-1. Goal
+## Project Structure
 
-A single C program that:
+### Files
+- `Main.c` - Main menu interface and program entry point
+- `Part_1.c` - Security audit functions (misconfiguration scanning)
+- `DetectionMonitor.c` - Intrusion detection monitor launcher
+- `detection_monitor.sh` - Shell script implementing the monitoring daemon
 
-Runs a few Linux commands
-Prints results
-Assigns a basic risk score
-Shows quick recommendations
-2. Program Flow (Very Simple)
-Start
-  ↓
-Run checks (one by one)
-  ↓
-Add to risk score if issue found
-  ↓
-Print results
-  ↓
-Print final score + fixes
-End
-3. 🔍 Checks (Minimal Set)
+### Components
 
-Just include these 6 simple checks:
+## Part 1: Security Auditor
 
-SSH config
-Check if root login is enabled
-Open ports
-Run ss -tuln
-World-writable files
-find / -perm -0002
-Empty passwords
-Check /etc/shadow
-SUID files
-find / -perm -4000
-Firewall
-Check if UFW is active
-4. Code Structure (All in One File)
-main()
- ├── check_ssh()
- ├── check_ports()
- ├── check_world_writable()
- ├── check_passwords()
- ├── check_suid()
- ├── check_firewall()
- ├── print_score()
- └── print_recommendations()
-5. ⚖️ Simple Risk Scoring
+A C program that scans the Linux system for common security misconfigurations and generates a comprehensive security report.
 
-Keep it basic:
+### Features
+- **SSH Configuration Check**: Detects weak SSH settings (root login, password authentication)
+- **Open Ports Analysis**: Lists listening ports using `ss` or `netstat`
+- **World-Writable Files**: Finds files with world-write permissions
+- **Empty Password Users**: Identifies users with empty passwords in `/etc/shadow`
+- **SUID Binaries Audit**: Lists setuid files (potential security risks)
+- **Firewall Status**: Checks UFW/firewalld status
+- **File Integrity**: Computes SHA256 hashes of critical system files
+- **Risk Scoring**: Assigns risk scores and provides security recommendations
 
-+2 → SSH issues
-+2 → Open ports
-+2 → World-writable files
-+3 → Empty passwords
-+2 → SUID files
-+3 → No firewall
-Risk Levels:
-0–4 → Low
-5–9 → Medium
-10+ → High
-6. 🖥️ Output Format (Simple)
+### Risk Scoring System
+- SSH issues: +2 points
+- Many open ports: +2 points
+- World-writable files: +2 points
+- Empty passwords: +3 points
+- Excessive SUID files: +1 point
+- Inactive firewall: +3 points
 
-Example:
+**Risk Levels:**
+- 0-4: LOW RISK
+- 5-9: MEDIUM RISK
+- 10+: HIGH RISK
 
-==== Security Audit ====
+## Part 2: Intrusion Detection Monitor
 
-[SSH]
-WARNING: Root login enabled
+A daemon/service that monitors system logs in real-time for suspicious activities and automatically responds to threats.
 
-[Ports]
-(list of ports)
+### Features
+- **Real-time Log Monitoring**: Watches `/var/log/auth.log` and `/var/log/syslog`
+- **Failed Login Detection**: Tracks failed SSH login attempts
+- **Invalid User Alerts**: Monitors attempts with non-existent usernames
+- **Sudo Usage Tracking**: Logs unusual sudo command usage
+- **Privilege Escalation Detection**: Identifies su/sudo failure patterns
+- **Port Scan Detection**: Uses iptables to log and detect SYN packet floods
+- **Auto-Banning**: Automatically blocks repeat offenders via iptables rules
+- **Structured Logging**: Records all events to `log.txt` with timestamps
 
-[Firewall]
-WARNING: Not active
+### Auto-Banning Logic
+- Tracks violations per IP address
+- Bans IPs after reaching configurable threshold (default: 4 violations)
+- Updates iptables firewall rules dynamically
+- Logs all ban/unban actions
 
-==== RESULT ====
-Risk Score: 8 (MEDIUM)
+## Installation & Usage
 
-==== FIXES ====
-- Disable root SSH login
-- Enable firewall
-- Remove world-writable files
-7. ⚙️ Implementation Rules (Keep It Simple)
-Use:
-system() → for quick checks
-popen() → if you want output
-Don’t over-parse output
-Don’t store data in files (optional)
-Just print everything
-8.  Minimal Features Only
+### Prerequisites
+- Linux system with standard tools (`ss`, `netstat`, `find`, `grep`, etc.)
+- Root privileges for full functionality (log access, iptables)
+- GCC compiler for building
 
-DO:
-
-Print results
-Increment score
-Show fixes
-
-DON’T:
-
-Build modules
-Use complex parsing
-Add networking or APIs
-Over-engineer
-9. How to Run (current repo)
-
-Compile:
-
+### Building
 ```bash
-gcc Part_1.c Main.c DetectionMonitor.c -o security_auditor
+gcc Main.c Part_1.c DetectionMonitor.c -o security_auditor
 ```
 
-Run:
-
+### Running
 ```bash
 sudo ./security_auditor
 ```
 
-Part 2 note:
-- `Option 2` runs `./detection_monitor.sh` (keep that script in the same directory as `security_auditor`)
+### Menu Options
+1. **Part 1 Audit**: Run the security misconfiguration scan
+2. **Part 2 Live Monitor**: Start intrusion detection for 1 minute (demo)
+3. **Part 2 Self-Test**: Run automated test with simulated attacks
+0. **Exit**: Quit the program
 
-Menu options:
-- 1: Run Part 1 audit
-- 2: Run Part 2 intrusion detection monitor (continuous)
-- 3: Run Part 2 self-test (starts monitor, injects test events with `logger`, checks `log.txt` + iptables, then stops monitor)
+## Part 2 Self-Test
+
+The self-test feature:
+- Starts the detection monitor in background
+- Injects test events (failed logins, invalid users, port scans)
+- Verifies that violations are logged and IPs are banned
+- Checks iptables rules and log file
+- Automatically stops the monitor
+
+## Security Considerations
+
+- **Run with sudo**: Required for accessing system logs and modifying iptables
+- **Log File**: Events are logged to `log.txt` in current directory
+- **Iptables Rules**: Bans are added to INPUT chain - review before production use
+- **Resource Usage**: File scanning is limited to avoid system impact
+- **Timeout Protection**: Long-running commands are timed out to prevent hangs
+
+## Technical Implementation
+
+### Architecture
+- **C Frontend**: Menu interface and audit logic
+- **Shell Backend**: Monitoring daemon using `tail -F` for log following
+- **Process Management**: Proper cleanup and signal handling
+- **Cross-Distribution**: Adapts to different log file locations (`auth.log` vs `secure`, `syslog` vs `messages`)
+
+### Key Technologies
+- System command execution via `popen()` and `system()`
+- Real-time log monitoring with `tail -F`
+- Firewall management with `iptables`
+- Process groups for clean daemon shutdown
+- Rate-limited iptables logging for port scan detection
+
+## Future Enhancements
+
+- File integrity baseline comparison (currently shows hashes only)
+- Configurable risk scoring thresholds
+- Email/SMS alerts for critical events
+- Web-based dashboard
+- Integration with SIEM systems
+- Support for systemd/journald logging
