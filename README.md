@@ -1,170 +1,112 @@
-
 # 🛡️ Linux Security Auditor (Group 4)
 
-A command-line C program that scans a Linux system for common security misconfigurations, evaluates risk, and generates a structured security report with actionable recommendations.
-**Goal:** A single C program that:
-Runs a few Linux commands
-Prints results
-Assigns a basic risk score
-Shows quick recommendations
+A command-line C project that performs a Linux security audit (Part 1) and runs a lightweight intrusion detection monitor (Part 2), then reports risk and recommended fixes.
+
+**Goal:** A single program that:
+- Runs practical Linux security checks
+- Prints clear findings
+- Assigns a basic risk score
+- Provides quick remediation guidance
 
 ## 🚀 Quick Start
 
 ```bash
-# 1. Compile the suite
+# 1) Compile
 gcc Part_1.c Main.c DetectionMonitor.c -o security_auditor
 
-# 2. Run with root privileges
+# 2) Run (sudo is recommended for full checks/monitoring)
 sudo ./security_auditor
 ```
+
 ---
+
 Program Flow
 Start
   ↓
-Run checks (one by one)
+Choose mode from menu
   ↓
-Add to risk score if an issue is found
+Run Part 1 audit OR Part 2 monitor/self-test
   ↓
-Print results
+Collect findings and risk signals
   ↓
-Print final score + fixes
+Print report/log output
 End
----
+
 ---
 
 ## 🛠️ System Components
 
 ### 1. Security Audit (Part 1)
-Evaluates the system's security posture by running six essential checks:
+`runPart1Audit()` executes these checks:
 
-| Check | Command/Method | Risk Points |
+| Check | Command/Method | Risk Behavior |
 | :--- | :--- | :--- |
-| **SSH Config** | Detects if Root Login is enabled | +2 |
-| **Open Ports** | Scans active listeners via `ss -tuln` | +2 |
-| **Permissions** | Finds world-writable files (`-perm -0002`) | +2 |
-| **Passwords** | Scans `/etc/shadow` for empty passwords | +3 |
-| **SUID Files** | Identifies elevated execution files (`-perm -4000`) | +2 |
-| **No Firewall** | Verifies if `UFW` is active | +3 |
+| **SSH Config** | Greps `PermitRootLogin` / `PasswordAuthentication` in `/etc/ssh/sshd_config` | Adds **+2** for weak settings |
+| **Open Ports** | Uses `ss -tuln` (fallback `netstat -tuln`) | Adds **+2** if many listening ports are found |
+| **World-Writable Files** | `find / -xdev -type f -perm -0002` (bounded with `timeout`) | Adds **+2** when any are found |
+| **Empty Passwords** | Scans `/etc/shadow` for blank password fields | Adds **+3** when any user is found |
+| **SUID Files** | `find / -xdev -perm -4000` (bounded with `timeout`) | Adds **+1** only for unusually high count |
+| **Firewall Status** | Checks `ufw` / `firewall-cmd` state | Adds **+3** if UFW is inactive |
+| **File Integrity Snapshot** | `sha256sum` on key files (`/etc/passwd`, `/etc/shadow`, SSH config) | Informational output |
 
-**Risk Levels:** 🟢 **0–4 (Low)** | 🟡 **5–9 (Medium)** | 🔴 **10+ (High)**
+**Risk Levels (from current code):**
+- `0`: SAFE
+- `1-4`: LOW RISK
+- `5-9`: MEDIUM RISK
+- `10+`: HIGH RISK
 
 ### 2. Intrusion Detection (Part 2)
-A continuous background monitor that tracks:
-* **Brute-Force Detection:** Monitors for repeated failed login attempts.
-* **Unauthorized Access:** Flags suspicious `sudo` activity.
-* **Incident Logging:** Records all alerts to `log.txt` for review.
+`runDetectionMonitor()` delegates to `detection_monitor.sh`, which:
+- Monitors auth logs (`/var/log/auth.log` or `/var/log/secure`)
+- Monitors system logs (`/var/log/syslog` or `/var/log/messages`) for `IPTABLES:` events
+- Writes events to `log.txt`
+- Tracks repeated events per IP and bans offenders with `iptables -I INPUT -s <ip> -j DROP`
+- Uses threshold `THRESH=4` by default (configurable via env var)
 
 ---
 
 ## 🕹️ User Menu
 
-Once launched, the program provides the following interactive options:
+When `security_auditor` starts, the menu is:
 
-1.  **Run Audit:** Performs the 6-point scan, calculates the risk score, and provides fixes.
-2.  **Start Monitor:** Activates the real-time log watcher (press `Ctrl+C` to stop).
-3.  **Self-Test:** Automated verification that injects test events using `logger` and confirms detection.
+1. **Part 1** - Run the full security audit and print report
+2. **Part 2 Live Logs (1 minute)** - Start monitor, stream for 60 seconds, auto-stop
+3. **Part 2 Self-Test (skip live logs)** - Start monitor, inject test events, verify results, stop monitor
+0. **Exit**
+
+> Part 2 options require root privileges to read logs and manage `iptables`.
 
 ---
 
 ## 🧪 Self-Test Workflow
-The automated self-test (Option 3) validates the system by:
-1.  Launching the **Detection Monitor** in the background.
-2.  Injecting simulated attack signatures into the system logs via `logger`.
-3.  Verifying the monitor correctly writes these events to `log.txt`.
-4.  Cleaning up test processes and logs automatically.
+
+Option 3 currently does the following:
+1. Starts the detection monitor in a background process group.
+2. Injects simulated auth + iptables-style events (4 rounds) for test IP `10.9.8.7` using `logger`.
+3. Prints recent `log.txt` entries (`tail -n 25`).
+4. Checks whether the test IP is banned in iptables (`BANNED` / `NOT BANNED`).
+5. Stops the monitor and exits cleanly.
 
 ---
-**Part 2 note:**
-- `Option 2` runs `./detection_monitor.sh` (keep that script in the same directory as `security_auditor`)
-  "
 
-Menu options:
-- 1: Run Part 1 audit
-- 2: Run Part 2 intrusion detection monitor (continuous)
-- 3: Run Part 2 self-test (starts monitor, injects test events with `logger`, checks `log.txt` + iptables, then stops monitor)
+## ⚙️ Implementation Notes
 
+- The project intentionally uses simple C patterns (`system()`, `popen()`) for readability.
+- Long-running log monitoring logic is kept in `detection_monitor.sh`.
+- Part 1 scan commands are bounded where needed (`timeout`) to reduce hangs.
+- Output is report-first and terminal-friendly (no external services/APIs required).
 
-## ⚙️ Implementation Standards
-* **Lightweight:** Uses `system()` and `popen()` for efficient command execution.
-* **Single File Logic:** Built to be easily readable without complex dependencies.
-* **Actionable:** Every warning is paired with a specific fix in the final report.
+## 📦 Current Repo Run Notes
 
------------------------------------
-
-4. Code Structure (All in One File)
-main()
- ├── check_ssh()
- ├── check_ports()
- ├── check_world_writable()
- ├── check_passwords()
- ├── check_suid()
- ├── check_firewall()
- ├── print_score()
- └── print_recommendations()
-
-6. 🖥️ Output Format (Simple)
-
-Example:
-
-==== Security Audit ====
-
-[SSH]
-WARNING: Root login enabled
-
-[Ports]
-(list of ports)
-
-[Firewall]
-WARNING: Not active
-
-==== RESULT ====
-Risk Score: 8 (MEDIUM)
-
-==== FIXES ====
-- Disable root SSH login
-- Enable firewall
-- Remove world-writable files
-  
-7. ⚙️ Implementation Rules (Keep It Simple)
-Use:
-system() → for quick checks
-popen() → if you want output
-Don’t over-parse output
-Don’t store data in files (optional)
-Just print everything
-8.  Minimal Features Only
-
-DO:
-
-Print results
-Increment score
-Show fixes
-
-DON’T:
-
-Build modules
-Use complex parsing
-Add networking or APIs
-Over-engineer
-
-9. How to Run (current repo)
-
-Compile:
+- Keep `detection_monitor.sh` in the same directory as the compiled `security_auditor` binary.
+- Compile with:
 
 ```bash
 gcc Part_1.c Main.c DetectionMonitor.c -o security_auditor
 ```
 
-Run:
+- Run with:
 
 ```bash
 sudo ./security_auditor
 ```
-
-Part 2 note:
-- `Option 2` runs `./detection_monitor.sh` (keep that script in the same directory as `security_auditor`)
-
-Menu options:
-- 1: Run Part 1 audit
-- 2: Run Part 2 intrusion detection monitor (continuous)
-- 3: Run Part 2 self-test (starts monitor, injects test events with `logger`, checks `log.txt` + iptables, then stops monitor)
