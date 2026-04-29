@@ -20,7 +20,8 @@ sudo ./security_auditor
 
 ---
 
-Program Flow
+**Program Flow**
+
 Start
   ↓
 Choose mode from menu
@@ -30,7 +31,8 @@ Run Part 1 audit OR Part 2 monitor/self-test
 Collect findings and risk signals
   ↓
 Print report/log output
-End
+
+**End**
 
 ---
 
@@ -69,7 +71,7 @@ End
 
 When `security_auditor` starts, the menu is:
 
-1. **Part 1** - Run the full security audit and print report
+1. **Part 1** - Run the full security audit and print the report
 2. **Part 2 Live Logs (1 minute)** - Start monitor, stream for 60 seconds, auto-stop
 3. **Part 2 Self-Test (skip live logs)** - Start monitor, inject test events, verify results, stop monitor
 0. **Exit**
@@ -99,14 +101,5 @@ Option 3 currently does the following:
 ## 📦 Current Repo Run Notes
 
 - Keep `detection_monitor.sh` in the same directory as the compiled `security_auditor` binary.
-- Compile with:
 
-```bash
-gcc Part_1.c Main.c DetectionMonitor.c -o security_auditor
-```
-
-- Run with:
-
-```bash
-sudo ./security_auditor
 ```
